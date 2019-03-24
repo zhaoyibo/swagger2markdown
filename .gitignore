@@ -190,3 +190,4 @@ go.sum
 .idea
 data
 swagger2markdown
+release

@@ -57,7 +57,7 @@ func yOrN(b bool) string {
 
 func contains(arr []string, target string) bool {
 	if arr == nil || len(arr) == 0 {
-		return false;
+		return false
 	}
 	for _, v := range arr {
 		if v == target {

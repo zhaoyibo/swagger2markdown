@@ -7,8 +7,6 @@ import (
 	"windmt.com/swagger2markdown/tool"
 )
 
-
-
 func ParseOne(swaggerApiUrl, targetPath, file string) error {
 	root, err := getRootFromUrl(swaggerApiUrl)
 	if err != nil {
