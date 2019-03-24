@@ -189,3 +189,4 @@ main
 go.sum
 .idea
 data
+swagger2markdown
