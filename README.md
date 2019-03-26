@@ -4,7 +4,7 @@ Swagger 文档转 Markdown
 ## Usage
 
 ```
-swagger2markdown version: 1.0.0
+swagger2markdown version: 1.0.1
 Usage:
   swagger2markdown [OPTIONS]
 
