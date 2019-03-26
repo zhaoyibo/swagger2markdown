@@ -23,6 +23,7 @@ type (
 		Schema      map[string]string `json:"schema,omitempty"`
 		Type        string            `json:"type,omitempty"`
 		Format      string            `json:"format,omitempty"`
+		Example     interface{}       `json:"x-example,omitempty"`
 	}
 
 	Response struct {
@@ -62,7 +63,7 @@ func (schema Schema) IsList() bool {
 
 func (schema Schema) Ref() string {
 	if schema.Items == nil {
-		return "TODO"
+		return "ManagerResponse"
 	}
 	return formatModelName(schema.Items["$ref"])
 }
