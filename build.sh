@@ -1,7 +1,7 @@
 #!/bin/bash
 
 project_name=${PWD##*/}
-release_version="1.0.0"
+release_version="1.0.1"
 
 release_dir=./release
 rm -rf $release_dir/*
