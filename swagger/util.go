@@ -89,7 +89,7 @@ func testLogin() {
 	if cookie != "" {
 		return
 	}
-	resp, err := http.Post("http://testmanager.wb-intra.com/wim-manager/testLogin", contentType, strings.NewReader(""))
+	resp, err := http.Post(tool.GetDomain()+"/wim-manager/testLogin", contentType, strings.NewReader(""))
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
@@ -140,7 +140,7 @@ func getResponseExample(apiUrl string, param string) string {
 		}
 	}
 
-	if bytes, err := json.MarshalIndent(tmpMap, "", "\t"); err != nil {
+	if bytes, err := json.MarshalIndent(tmpMap, "", "    "); err != nil {
 		panic(err)
 	} else {
 		return string(bytes)
@@ -175,35 +175,19 @@ func getRequestMarkdown(path model.Path, root *model.Root, baseTitleLevel int) (
 		}
 
 		if isBody {
-			builder.Append("|字段|类型|必须|说明|示例|").Br()
-			builder.Append("|----|----|----|----|----|").Br()
 
 			definition := root.Definitions[firstParameter.TypeName()]
 
-			for _, property := range definition.Properties() {
-				if !property.ReadOnly {
-					builder.Append("|").Append(property.Name)
-					builder.Append("|").Append(property.Type)
-					builder.Append("|").Append(yOrN(contains(definition.Required, property.Name)))
-					builder.Append("|").Append(property.Description)
-					builder.Append("|").Append(interfaceToString(property.Example))
-					builder.Append("|").Br()
-				}
-			}
+			buildModels(true, builder, definition, root)
 
 			builder.Br2()
 			builder.Append("请求示例：").Br2()
 
-			requestExampleMap := make(map[string]interface{})
-			for _, v := range definition.Properties() {
-				if !v.ReadOnly {
-					requestExampleMap[v.Name] = v.Example
-				}
-			}
+			requestExampleMap := buildRequestExampleMap(definition, root)
 
 			builder.Append("```json").Br()
 
-			if bytes, err := json.MarshalIndent(requestExampleMap, "", "\t"); err != nil {
+			if bytes, err := json.MarshalIndent(requestExampleMap, "", "    "); err != nil {
 				panic(err)
 			} else {
 				builder.Append(string(bytes)).Br()
@@ -251,6 +235,20 @@ func getRequestMarkdown(path model.Path, root *model.Root, baseTitleLevel int) (
 	return builder.String(), exampleParams
 }
 
+func buildRequestExampleMap(definition model.Definition, root *model.Root) map[string]interface{} {
+	requestExampleMap := make(map[string]interface{})
+	for _, v := range definition.Properties() {
+		if !v.ReadOnly {
+			if v.RefRaw != "" {
+				requestExampleMap[v.Name] = buildRequestExampleMap(root.Definitions[v.Ref()], root)
+			} else {
+				requestExampleMap[v.Name] = v.Example
+			}
+		}
+	}
+	return requestExampleMap
+}
+
 func getResponseMarkdown(path model.Path, root *model.Root, requestUrl string, exampleParams string, methods string, baseTitleLevel int) string {
 	builder := &tool.StringBuilder{}
 
@@ -273,33 +271,21 @@ func getResponseMarkdown(path model.Path, root *model.Root, requestUrl string, e
 	builder.Append(strings.Repeat("#", baseTitleLevel+1)).Append(" ").Append("响应体").Br2()
 	schema := path.Responses["200"].Schema
 
-	if schema.IsVoid() || strings.EqualFold(schema.Ref(), "ManagerResponse") || !strings.Contains(methods, "GET") {
+	if strings.EqualFold(schema.Ref(), "ManagerResponse") || !strings.Contains(methods, "GET") {
 		builder.Append("```json").Br()
 		responseExampleMap := make(map[string]interface{})
 		responseExampleMap["code"] = 0
 		responseExampleMap["msg"] = "success"
 		responseExampleMap["data"] = make(map[string]interface{})
-		if bytes, err := json.MarshalIndent(responseExampleMap, "", "\t"); err != nil {
+		if bytes, err := json.MarshalIndent(responseExampleMap, "", "    "); err != nil {
 			panic(err)
 		} else {
 			builder.Append(string(bytes)).Br()
 		}
 		builder.Append("```").Br2()
 	} else {
-		definition := root.Definitions[schema.Ref()]
-
-		builder.Append(definition.Title).Br2()
-
-		builder.Append("|字段|类型|非空|说明|示例|").Br()
-		builder.Append("|----|----|----|----|----|").Br()
-
-		for _, property := range definition.Properties() {
-			builder.Append("|").Append(property.Name)
-			builder.Append("|").Append(property.Type)
-			builder.Append("|").Append(yOrN(contains(definition.Required, property.Name)))
-			builder.Append("|").Append(property.Description)
-			builder.Append("|").Append(interfaceToString(property.Example))
-			builder.Append("|").Br()
+		if definition, ok := root.Definitions[schema.Ref()]; ok {
+			buildModels(false, builder, definition, root)
 		}
 
 		builder.Append("响应示例：").Br2()
@@ -312,8 +298,47 @@ func getResponseMarkdown(path model.Path, root *model.Root, requestUrl string, e
 	return builder.String()
 }
 
+func buildModels(isRequest bool, builder *tool.StringBuilder, definition model.Definition, root *model.Root) {
+	subDefinitions := make([]model.Definition, 0)
+	builder.Append("**").Append(definition.Title).Append("：**").Br2()
+	if isRequest {
+		builder.Append("|字段|类型|必须|说明|示例|").Br()
+	} else {
+		builder.Append("|字段|类型|非空|说明|示例|").Br()
+	}
+
+	builder.Append("|----|----|----|----|----|").Br()
+
+	for _, property := range definition.Properties() {
+		if isRequest && property.ReadOnly {
+			continue
+		}
+
+		builder.Append("|").Append(property.Name)
+		if property.Type != "" {
+			builder.Append("|").Append(property.Type)
+		} else if property.Ref() != "" {
+			builder.Append("|").Append(property.Ref())
+			subDefinitions = append(subDefinitions, root.Definitions[property.Ref()])
+		} else {
+			builder.Append("|")
+		}
+		builder.Append("|").Append(yOrN(contains(definition.Required, property.Name)))
+		builder.Append("|").Append(property.Description)
+		builder.Append("|").Append(interfaceToString(property.Example))
+		builder.Append("|").Br()
+	}
+	builder.Br2()
+
+	if len(subDefinitions) > 0 {
+		for _, subDefinition := range subDefinitions {
+			buildModels(isRequest, builder, subDefinition, root)
+		}
+	}
+}
+
 func getRequestUrl(basePath, path string) string {
-	return "http://testmanager.wb-intra.com" + basePath + path
+	return tool.GetDomain() + basePath + path
 }
 
 func sortedMap(m map[string]interface{}, f func(k string, v interface{})) {

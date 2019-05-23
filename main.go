@@ -15,6 +15,7 @@ var opts struct {
 	Project string `short:"p" long:"project" value-name:"PROJECT" description:"要导出文档要的工程名, 例如：wim-manager\np.s. -u 的优先级更高"`
 	File    string `short:"f" long:"file" description:"保存结果的文件名，例如：wim-manager.md 若文件已存在则会被覆盖" value-name:"FILE"`
 	Path    string `short:"P" long:"path" value-name:"PATH" description:"要导出 path 路径，例如：/text/list"`
+	Env     string `short:"e" long:"env" value-name:"ENV" description:"环境，默认是 test"`
 }
 
 func main() {
@@ -27,6 +28,8 @@ func main() {
 		}
 	}
 
+	tool.InitDomain(opts.Env)
+
 	var url string
 	if opts.Project == "" && opts.Url == "" {
 		fmt.Fprintf(os.Stderr, "Missing flag [-u|-p]\nRun '%s -h' for usage.\n", os.Args[0])
@@ -34,7 +37,7 @@ func main() {
 	} else if opts.Url != "" {
 		url = opts.Url
 	} else if opts.Project != "" {
-		url = "http://testmanager.wb-intra.com/" + opts.Project + "/v2/api-docs"
+		url = tool.GetDomain() + "/" + opts.Project + "/v2/api-docs"
 	}
 
 	file := opts.File

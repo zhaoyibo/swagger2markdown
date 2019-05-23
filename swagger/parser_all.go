@@ -17,7 +17,7 @@ func ParseAll(swaggerApiUrl, dst string) error {
 
 	builder := &tool.StringBuilder{}
 
-	builder.Append("# 接口文档").Br2()
+	//builder.Append("# 接口文档").Br2()
 	builder.Append("BasePath: ").Append(root.BasePath).Br2()
 	builder.Append("Swagger UI: ").Append(strings.Replace(swaggerApiUrl, "/v2/api-docs", "/swagger-ui.html#/", 1)).Br2()
 
@@ -56,14 +56,14 @@ func ParseAll(swaggerApiUrl, dst string) error {
 	//fmt.Printf("%+v\n", pathMapGroupByTag)
 	//fmt.Printf("%+v\n", pathMethodMap)
 
-	baseTitleLevel := 4
+	baseTitleLevel := 3
 
 	sortedMap(pathMapGroupByTag, func(tag string, pathMap interface{}) {
-		builder.Append("## ").Append(tag).Br2()
+		builder.Append("# ").Append(tag).Br2()
 
 		sortedMap(pathMap.(map[string]interface{}), func(uri string, v interface{}) {
 			path := v.(model.Path)
-			builder.Append("### ").Append(basePath).Append(uri).Br2()
+			builder.Append("## ").Append(basePath).Append(uri).Br2()
 
 			desc := getDescMarkdown(path, basePath, uri, pathMethodMap[uri], baseTitleLevel)
 			builder.Append(desc).Br2()

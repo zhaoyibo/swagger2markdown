@@ -54,7 +54,7 @@ func formatModelName(s string) string {
 }
 
 func (schema Schema) IsVoid() bool {
-	return schema.RefRaw != "" && schema.Items == nil
+	return schema.RefRaw == "" && schema.Items == nil
 }
 
 func (schema Schema) IsList() bool {
@@ -62,7 +62,10 @@ func (schema Schema) IsList() bool {
 }
 
 func (schema Schema) Ref() string {
-	if schema.Items == nil {
+	if schema.RefRaw != "" {
+		return formatModelName(schema.RefRaw)
+	}
+	if schema.Type == "" && schema.Items == nil {
 		return "ManagerResponse"
 	}
 	return formatModelName(schema.Items["$ref"])
