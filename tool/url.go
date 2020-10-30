@@ -1,6 +1,7 @@
 package tool
 
 var domain string
+var project string
 
 func InitDomain(env string) {
 	if env == "dev" {
@@ -10,6 +11,18 @@ func InitDomain(env string) {
 	}
 }
 
+func SetDomain(d string) {
+	domain = d
+}
+
+func SetProject(p string) {
+	project = p
+}
+
 func GetDomain() string {
 	return domain
+}
+
+func GetProject() string {
+	return project
 }

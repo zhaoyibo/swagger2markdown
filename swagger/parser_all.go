@@ -32,7 +32,7 @@ func ParseAll(swaggerApiUrl, dst string) error {
 	pathMethodMap := make(map[string]string)
 
 	for uri, paths := range root.Paths {
-		if strings.HasPrefix(uri, "/_") || strings.EqualFold(uri, "/ms/*/*") || strings.Contains(uri, "testLogin") || strings.Contains(uri, "managerSchedule") {
+		if strings.HasPrefix(uri, "/_") || strings.EqualFold(uri, "/ms/*/*") || strings.Contains(uri, "testLogin") || strings.Contains(uri, "managerSchedule") || strings.HasPrefix(uri, "/common/data") {
 			continue
 		}
 

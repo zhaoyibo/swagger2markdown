@@ -83,13 +83,14 @@ func contains(arr []string, target string) bool {
 }
 
 var cookie = ""
-var contentType = "application/x-www-form-urlencoded; charset=utf-8"
+var contentType = "application/json;charset=UTF-8"
 
 func testLogin() {
 	if cookie != "" {
 		return
 	}
-	resp, err := http.Post(tool.GetDomain()+"/wim-manager/testLogin", contentType, strings.NewReader(""))
+	url := tool.GetDomain() + "/" + tool.GetProject() + "/testLogin"
+	resp, err := http.Post(url, contentType, strings.NewReader(""))
 	if err != nil {
 		log.Fatal("Error:", err)
 	}
@@ -152,7 +153,7 @@ func getDescMarkdown(path model.Path, basePath string, targetPath string, method
 	builder.Append(strings.Repeat("#", baseTitleLevel)).Append(" ").Append("接口描述").Br()
 	builder.Append("功能：").Append(path.Summary).Br2()
 	builder.Append("地址：").Append(basePath).Append(targetPath).Br2()
-	builder.Append("方法：").Append(methods).Br2()
+	builder.Append("方法：").Append("POST").Br2()
 	return builder.String()
 }
 
@@ -162,9 +163,9 @@ func getRequestMarkdown(path model.Path, root *model.Root, baseTitleLevel int) (
 	builder.Append(strings.Repeat("#", baseTitleLevel)).Append(" ").Append("请求参数").Br2()
 	parameters := path.Parameters
 	if parameters == nil {
+
 		builder.Append("无").Br2()
 	} else if len(parameters) > 0 {
-
 		firstParameter := parameters[0]
 		isBody := firstParameter.IsBody()
 
@@ -184,6 +185,12 @@ func getRequestMarkdown(path model.Path, root *model.Root, baseTitleLevel int) (
 			builder.Append("请求示例：").Br2()
 
 			requestExampleMap := buildRequestExampleMap(definition, root)
+
+			if bytes, err := json.Marshal(requestExampleMap); err != nil {
+				panic(err)
+			} else {
+				exampleParams = string(bytes)
+			}
 
 			builder.Append("```json").Br()
 
@@ -301,6 +308,11 @@ func getResponseMarkdown(path model.Path, root *model.Root, requestUrl string, e
 func buildModels(isRequest bool, builder *tool.StringBuilder, definition model.Definition, root *model.Root) {
 	subDefinitions := make([]model.Definition, 0)
 	builder.Append("**").Append(definition.Title).Append("：**").Br2()
+	if len(definition.Properties()) == 0 {
+		builder.Append("无")
+		return
+	}
+
 	if isRequest {
 		builder.Append("|字段|类型|必须|说明|示例|").Br()
 	} else {
