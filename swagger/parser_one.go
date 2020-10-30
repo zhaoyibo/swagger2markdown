@@ -40,9 +40,5 @@ func ParseOne(swaggerApiUrl, targetPath, file string) error {
 	response := getResponseMarkdown(path, root, getRequestUrl(basePath, targetPath), exampleParams, methodsStr, baseTitleLevel)
 	builder.Append(response).Br2()
 
-	println(builder.String())
-
-	return nil
-
-	//return tool.SaveToFile(file, builder.String())
+	return tool.SaveToFile(file, builder.String())
 }
